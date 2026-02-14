@@ -1,6 +1,8 @@
 "use client"
 import React, { useState } from 'react';
-import { Search, Calendar, DollarSign, ChevronDown, Eye, Copy, Trash2, Bell, CreditCard, BarChart3, Grid3x3, TrendingUp } from 'lucide-react';
+import { Search, Calendar, DollarSign, ChevronDown, Eye, Copy, Trash2, Bell, CreditCard, BarChart3, Grid3x3, TrendingUp, Phone, Mail } from 'lucide-react';
+
+import Link from "next/link";
 
 export default function FormateLanding() {
   const [selectedType, setSelectedType] = useState('');
@@ -69,16 +71,21 @@ export default function FormateLanding() {
       <nav className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="text-2xl font-bold text-blue-600">Formate</div>
+            <Link href="/" className="text-2xl font-bold text-blue-500">
+              Formate
+            </Link>
             <div className="hidden md:flex items-center gap-8">
               <a href="#" className="text-slate-700 hover:text-blue-600 transition-colors">Tentang</a>
               <a href="#" className="text-slate-700 hover:text-blue-600 transition-colors">Fitur</a>
               <a href="#" className="text-slate-700 hover:text-blue-600 transition-colors">Cara Kerja</a>
               <a href="#" className="text-slate-700 hover:text-blue-600 transition-colors">Kontak</a>
             </div>
-            <button className="bg-blue-600 cursor-pointer hover:bg-blue-700 text-white px-6 py-2 rounded-full transition-all shadow-sm hover:shadow-md">
+            <Link
+              href="/auth/login"
+              className="rounded-full bg-linear-to-r from-blue-500 to-indigo-500 px-6 py-2 font-semibold text-white shadow-md transition-transform hover:scale-105"
+            >
               Login
-            </button>
+            </Link>
           </div>
         </div>
       </nav>
@@ -476,27 +483,32 @@ export default function FormateLanding() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-white py-12 mt-16">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="text-2xl font-bold mb-4">Formate</h3>
-              <p className="text-slate-400 max-w-md">
-                Platform all-in-one untuk produk anda dengan mudah.
+      {/* Footer */}
+      <footer className="w-full bg-blue-900 py-10 text-white mt-auto">
+        <div className="container mx-auto px-6">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-8">
+            <div className="max-w-xs">
+              <h3 className="text-xl font-bold text-blue-400 mb-2">Formate</h3>
+              <p className="text-sm text-gray-300 leading-relaxed">
+                Platform all-in-one untuk kelola produk anda dengan mudah.
               </p>
             </div>
-
-            <div className="text-right">
-              <h4 className="font-semibold mb-4">Kontak Kami</h4>
-              <div className="space-y-2 text-slate-400">
-                <p>📞 +62 123 4567 890</p>
-                <p>✉️ formate@gmail.com</p>
-              </div>
+            <div>
+              <h4 className="text-lg font-semibold mb-3">Kontak Kami</h4>
+              <ul className="space-y-2 text-sm text-gray-300">
+                <li className="flex items-center gap-2">
+                  <Phone size={16} />
+                  <span>+62 8123 4567 890</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Mail size={16} />
+                  <span>formate@gmail.com</span>
+                </li>
+              </ul>
             </div>
           </div>
-
-          <div className="border-t border-slate-800 mt-8 pt-8 text-center text-slate-500">
-            © 2026 Formate. All rights reserved.
+          <div className="mt-10 border-t border-blue-800 pt-6 text-center text-xs text-blue-200">
+            &copy; 2026 Formate. All rights reserved.
           </div>
         </div>
       </footer>
