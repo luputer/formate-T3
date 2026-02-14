@@ -4,7 +4,6 @@ import {
     ArrowUpRight,
     ShoppingBag,
     Users,
-    BarChart2,
     TrendingUp
 } from "lucide-react";
 
@@ -108,7 +107,7 @@ export default function DashboardPage() {
                         </div>
                         {/* Grid Lines */}
                         <div className="absolute inset-0 left-8 right-0 flex flex-col justify-between pointer-events-none">
-                            {[...Array(5)].map((_, i) => (
+                            {[0, 1, 2, 3, 4].map((_, i) => (
                                 <div key={i} className="border-b border-dashed border-slate-100 h-0 w-full relative top-2"></div>
                             ))}
                         </div>
@@ -170,7 +169,7 @@ export default function DashboardPage() {
                         </div>
                         {/* Grid Lines */}
                         <div className="absolute inset-0 left-8 right-0 flex flex-col justify-between pointer-events-none">
-                            {[...Array(5)].map((_, i) => (
+                            {[0, 1, 2, 3, 4].map((_, i) => (
                                 <div key={i} className="border-b border-dashed border-slate-100 h-0 w-full relative top-2"></div>
                             ))}
                         </div>
@@ -214,7 +213,7 @@ export default function DashboardPage() {
                         </div>
                         {/* Grid Lines */}
                         <div className="absolute inset-0 left-10 right-0 flex flex-col justify-between pointer-events-none">
-                            {[...Array(5)].map((_, i) => (
+                            {[0, 1, 2, 3, 4].map((_, i) => (
                                 <div key={i} className="border-b border-dashed border-slate-100 h-0 w-full relative top-2"></div>
                             ))}
                         </div>
@@ -263,7 +262,7 @@ export default function DashboardPage() {
                         </div>
                         {/* Grid Lines */}
                         <div className="absolute inset-0 left-10 right-0 flex flex-col justify-between pointer-events-none">
-                            {[...Array(5)].map((_, i) => (
+                            {[0, 1, 2, 3, 4].map((_, i) => (
                                 <div key={i} className="border-b border-dashed border-slate-100 h-0 w-full relative top-2"></div>
                             ))}
                         </div>

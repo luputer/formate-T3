@@ -1,12 +1,11 @@
 "use client"
-import React, { useState } from 'react';
-import { Search, Calendar, DollarSign, ChevronDown, Eye, Copy, Trash2, Bell, CreditCard, BarChart3, Grid3x3, TrendingUp, Phone, Mail } from 'lucide-react';
+import React from 'react';
+import { Search, ChevronDown, Eye, Copy, Trash2, Bell, CreditCard, Grid3x3, TrendingUp, Phone, Mail } from 'lucide-react';
 
 import Link from "next/link";
 
 export default function FormateLanding() {
-  const [selectedType, setSelectedType] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
+
 
   const webinars = [
     {
