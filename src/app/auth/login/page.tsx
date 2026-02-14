@@ -3,15 +3,33 @@
 import Link from "next/link";
 import { Mail, Lock, Phone } from "lucide-react";
 import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
-    const handleLogin = (e: React.FormEvent) => {
+    const router = useRouter();
+    const [loading, setLoading] = useState(false);
+
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Implement login logic here
-        console.log("Login with:", { email, password });
+        setLoading(true);
+
+        const result = await signIn("credentials", {
+            redirect: false,
+            email,
+            password,
+        });
+
+        if (result?.error) {
+            alert("Login Gagal! Periksa email dan password Anda.");
+            setLoading(false);
+        } else {
+            router.push("/dashboard");
+            router.refresh();
+        }
     };
 
     return (
@@ -24,7 +42,7 @@ export default function LoginPage() {
                     </Link>
                     <Link
                         href="/auth/signup"
-                        className="rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 px-6 py-2 font-semibold text-white shadow-md transition-transform hover:scale-105"
+                        className="rounded-full bg-linear-to-r from-blue-500 to-indigo-500 px-6 py-2 font-semibold text-white shadow-md transition-transform hover:scale-105"
                     >
                         Sign up
                     </Link>
@@ -93,9 +111,10 @@ export default function LoginPage() {
                         {/* Login Button */}
                         <button
                             type="submit"
-                            className="mt-6 w-full rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 py-2.5 font-bold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                            disabled={loading}
+                            className="mt-6 w-full rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 py-2.5 font-bold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Login
+                            {loading ? "Memproses..." : "Login"}
                         </button>
                     </form>
 
@@ -112,6 +131,7 @@ export default function LoginPage() {
                     {/* Google Button */}
                     <button
                         type="button"
+                        onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
                         className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                     >
                         <svg className="h-5 w-5" viewBox="0 0 24 24">

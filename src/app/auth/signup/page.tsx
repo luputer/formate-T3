@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { Mail, Lock, Phone, User } from "lucide-react";
 import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { api } from "~/trpc/react";
 
 export default function SignupPage() {
     const [formData, setFormData] = useState({
@@ -18,10 +21,30 @@ export default function SignupPage() {
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
+    const router = useRouter();
+    const register = api.auth.register.useMutation({
+        onSuccess: () => {
+            alert("Registrasi Berhasil! Silakan Login.");
+            router.push("/auth/login");
+        },
+        onError: (error) => {
+            alert(error.message);
+        },
+    });
+
     const handleSignup = (e: React.FormEvent) => {
         e.preventDefault();
-        // Implement signup logic here
-        console.log("Signup with:", formData);
+        if (formData.password !== formData.confirmPassword) {
+            alert("Password dan Konfirmasi Password tidak sama");
+            return;
+        }
+
+        register.mutate({
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            password: formData.password,
+        });
     };
 
     return (
@@ -154,9 +177,10 @@ export default function SignupPage() {
                         {/* Signup Button */}
                         <button
                             type="submit"
-                            className="mt-6 w-full rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 py-2.5 font-bold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                            disabled={register.isPending}
+                            className="mt-6 w-full rounded-lg bg-gradient-to-r from-blue-500 to-indigo-500 py-2.5 font-bold text-white shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Daftar
+                            {register.isPending ? "Mendaftar..." : "Daftar"}
                         </button>
                     </form>
 
@@ -173,6 +197,7 @@ export default function SignupPage() {
                     {/* Google Button */}
                     <button
                         type="button"
+                        onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
                         className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                     >
                         <svg className="h-5 w-5" viewBox="0 0 24 24">
