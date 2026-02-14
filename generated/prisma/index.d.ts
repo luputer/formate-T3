@@ -6770,14 +6770,14 @@ export namespace Prisma {
   export type PostCreateInput = {
     name: string
     createdAt?: Date | string
-    updatedAt: Date | string
+    updatedAt?: Date | string
   }
 
   export type PostUncheckedCreateInput = {
     id?: number
     name: string
     createdAt?: Date | string
-    updatedAt: Date | string
+    updatedAt?: Date | string
   }
 
   export type PostUpdateInput = {
@@ -6797,7 +6797,7 @@ export namespace Prisma {
     id?: number
     name: string
     createdAt?: Date | string
-    updatedAt: Date | string
+    updatedAt?: Date | string
   }
 
   export type PostUpdateManyMutationInput = {
@@ -6817,7 +6817,7 @@ export namespace Prisma {
     bio?: string | null
     userId: number
     createdAt?: Date | string
-    updatedAt: Date | string
+    updatedAt?: Date | string
   }
 
   export type ProfileUncheckedCreateInput = {
@@ -6825,7 +6825,7 @@ export namespace Prisma {
     bio?: string | null
     userId: number
     createdAt?: Date | string
-    updatedAt: Date | string
+    updatedAt?: Date | string
   }
 
   export type ProfileUpdateInput = {
@@ -6848,7 +6848,7 @@ export namespace Prisma {
     bio?: string | null
     userId: number
     createdAt?: Date | string
-    updatedAt: Date | string
+    updatedAt?: Date | string
   }
 
   export type ProfileUpdateManyMutationInput = {
@@ -6871,7 +6871,7 @@ export namespace Prisma {
     title: string
     completed?: boolean
     createdAt?: Date | string
-    updatedAt: Date | string
+    updatedAt?: Date | string
   }
 
   export type TodoUncheckedCreateInput = {
@@ -6879,7 +6879,7 @@ export namespace Prisma {
     title: string
     completed?: boolean
     createdAt?: Date | string
-    updatedAt: Date | string
+    updatedAt?: Date | string
   }
 
   export type TodoUpdateInput = {
@@ -6903,7 +6903,7 @@ export namespace Prisma {
     title: string
     completed?: boolean
     createdAt?: Date | string
-    updatedAt: Date | string
+    updatedAt?: Date | string
   }
 
   export type TodoUpdateManyMutationInput = {
@@ -6982,7 +6982,7 @@ export namespace Prisma {
     email: string
     password: string
     createdAt?: Date | string
-    updatedAt: Date | string
+    updatedAt?: Date | string
   }
 
   export type UserUncheckedCreateInput = {
@@ -6990,7 +6990,7 @@ export namespace Prisma {
     email: string
     password: string
     createdAt?: Date | string
-    updatedAt: Date | string
+    updatedAt?: Date | string
   }
 
   export type UserUpdateInput = {
@@ -7013,7 +7013,7 @@ export namespace Prisma {
     email: string
     password: string
     createdAt?: Date | string
-    updatedAt: Date | string
+    updatedAt?: Date | string
   }
 
   export type UserUpdateManyMutationInput = {

@@ -13,7 +13,7 @@ model Post {
   id        Int      @id @default(autoincrement())
   name      String
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
 
   @@index([name])
 }
@@ -23,7 +23,7 @@ model Profile {
   bio       String?
   userId    Int      @unique
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
 }
 
 model Todo {
@@ -31,7 +31,7 @@ model Todo {
   title     String
   completed Boolean  @default(false)
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
 }
 
 model Product {
@@ -39,7 +39,7 @@ model Product {
   name      String
   price     Decimal
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt // Tambahkan @updatedAt supaya otomatis terupdate
+  updatedAt DateTime @updatedAt
 }
 
 model User {
@@ -47,5 +47,5 @@ model User {
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
 }
