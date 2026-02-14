@@ -137,32 +137,14 @@ exports.Prisma.SortOrder = {
   desc: 'desc'
 };
 
-exports.Prisma.PostOrderByRelevanceFieldEnum = {
-  name: 'name'
+exports.Prisma.QueryMode = {
+  default: 'default',
+  insensitive: 'insensitive'
 };
 
 exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
-};
-
-exports.Prisma.ProfileOrderByRelevanceFieldEnum = {
-  bio: 'bio'
-};
-
-exports.Prisma.TodoOrderByRelevanceFieldEnum = {
-  id: 'id',
-  title: 'title'
-};
-
-exports.Prisma.ProductOrderByRelevanceFieldEnum = {
-  id: 'id',
-  name: 'name'
-};
-
-exports.Prisma.UserOrderByRelevanceFieldEnum = {
-  email: 'email',
-  password: 'password'
 };
 
 
@@ -211,7 +193,7 @@ const config = {
   "datasourceNames": [
     "db"
   ],
-  "activeProvider": "mysql",
+  "activeProvider": "postgresql",
   "inlineDatasources": {
     "db": {
       "url": {
@@ -220,8 +202,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"../generated/prisma\"\n}\n\ndatasource db {\n  provider = \"mysql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel Post {\n  id        Int      @id @default(autoincrement())\n  name      String\n  createdAt DateTime @default(now())\n  updatedAt DateTime\n\n  @@index([name])\n}\n\nmodel Profile {\n  id        Int      @id @default(autoincrement())\n  bio       String?\n  userId    Int      @unique\n  createdAt DateTime @default(now())\n  updatedAt DateTime\n}\n\nmodel Todo {\n  id        String   @id @default(uuid())\n  title     String\n  completed Boolean  @default(false)\n  createdAt DateTime @default(now())\n  updatedAt DateTime\n}\n\nmodel Product {\n  id        String   @id @default(uuid())\n  name      String\n  price     Decimal\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt // Tambahkan @updatedAt supaya otomatis terupdate\n}\n\nmodel User {\n  id        Int      @id @default(autoincrement())\n  email     String   @unique\n  password  String\n  createdAt DateTime @default(now())\n  updatedAt DateTime\n}\n",
-  "inlineSchemaHash": "b918cadd881e0ccfa6228bcdd20211feff0cbc4635327d8bcc1910e75dd5335a",
+  "inlineSchema": "generator client {\n  provider = \"prisma-client-js\"\n  output   = \"../generated/prisma\"\n}\n\ndatasource db {\n  provider  = \"postgresql\"\n  url       = env(\"DATABASE_URL\")\n  directUrl = env(\"DIRECT_URL\")\n}\n\nmodel Post {\n  id        Int      @id @default(autoincrement())\n  name      String\n  createdAt DateTime @default(now())\n  updatedAt DateTime\n\n  @@index([name])\n}\n\nmodel Profile {\n  id        Int      @id @default(autoincrement())\n  bio       String?\n  userId    Int      @unique\n  createdAt DateTime @default(now())\n  updatedAt DateTime\n}\n\nmodel Todo {\n  id        String   @id @default(uuid())\n  title     String\n  completed Boolean  @default(false)\n  createdAt DateTime @default(now())\n  updatedAt DateTime\n}\n\nmodel Product {\n  id        String   @id @default(uuid())\n  name      String\n  price     Decimal\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt // Tambahkan @updatedAt supaya otomatis terupdate\n}\n\nmodel User {\n  id        Int      @id @default(autoincrement())\n  email     String   @unique\n  password  String\n  createdAt DateTime @default(now())\n  updatedAt DateTime\n}\n",
+  "inlineSchemaHash": "9a6254e7c97095e58a32ad1254f7d66f6c179dc0e266382e60228b64aa423d51",
   "copyEngine": true
 }
 config.dirname = '/'
