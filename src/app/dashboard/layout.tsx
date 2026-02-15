@@ -37,7 +37,7 @@ export default function DashboardLayout({
     ];
 
     return (
-        <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800">
+        <div className="flex min-h-screen font-sans text-slate-800">
             {/* Sidebar */}
             <aside className="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 hidden md:flex flex-col">
                 {/* Logo */}
