@@ -32,6 +32,8 @@ export default function LoginPage() {
         }
     };
 
+    // spa  js html css  spa -> build -> bisa jadi cepat karna spa  
+
     return (
         <div className="flex min-h-screen flex-col bg-blue-50 font-sans text-gray-800">
             {/* Header */}

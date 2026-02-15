@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, ChevronLeft, Plus } from "lucide-react";
-
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Calendar } from "~/components/ui/calendar";
@@ -43,7 +42,7 @@ export default function CreateWebinarPage() {
     );
 
     return (
-        <div className="space-y-6 max-w-7xl">
+        <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col gap-2 mb-8">
                 <Link
@@ -58,7 +57,7 @@ export default function CreateWebinarPage() {
                 </h1>
             </div>
 
-            <div className="bg-blue-50/50 p-6 rounded-xl space-y-8">
+            <div className="bg-blue-50 p-6 rounded-xl space-y-8">
                 {/* Informasi Produk */}
                 <section>
                     <SectionHeader title="Informasi Produk" />

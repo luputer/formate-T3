@@ -146,7 +146,11 @@ export default function WebinarPage() {
                     <tbody className="divide-y divide-slate-100">
                         {webinars.map((item) => (
                             <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                                <td className="px-6 py-4 font-medium text-slate-800">{item.name}</td>
+                                <td className="px-6 py-4 font-medium text-slate-800">
+                                    <Link href={`/dashboard/webinar/${item.id}`} className="hover:text-blue-600 hover:underline">
+                                        {item.name}
+                                    </Link>
+                                </td>
                                 <td className="px-6 py-4">
                                     <div className="font-medium text-slate-700">{item.date}</div>
                                     <div className="text-xs text-slate-400">{item.time}</div>
