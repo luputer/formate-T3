@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { UserNav } from "~/components/user-nav";
 import {
     LayoutDashboard,
     Video,
@@ -12,7 +12,6 @@ import {
     CreditCard,
     Store,
     Menu,
-    ChevronDown,
 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -61,8 +60,8 @@ export default function DashboardLayout({
                                     key={item.href}
                                     href={item.href}
                                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-colors ${active
-                                            ? "bg-blue-50 text-blue-600"
-                                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                                        ? "bg-blue-50 text-blue-600"
+                                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                                         }`}
                                 >
                                     <item.icon size={20} className={active ? "text-blue-600" : "text-slate-500"} />
@@ -98,20 +97,7 @@ export default function DashboardLayout({
 
                     <div className="flex items-center gap-4">
                         {/* User Profile */}
-                        <div className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 p-1.5 rounded-lg transition-colors">
-                            <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden relative">
-                                <Image
-                                    src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&auto=format&fit=crop&w=100&q=80"
-                                    alt="User Avatar"
-                                    fill
-                                    className="object-cover"
-                                />
-                            </div>
-                            <div className="hidden md:block text-sm font-medium text-slate-700">
-                                Mason Brooks
-                            </div>
-                            <ChevronDown size={16} className="text-slate-400 hidden md:block" />
-                        </div>
+                        <UserNav />
                     </div>
                 </header>
 
