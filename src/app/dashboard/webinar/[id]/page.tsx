@@ -1,11 +1,20 @@
 "use client";
 
-import { ChevronLeft, Edit, Image as ImageIcon } from "lucide-react";
+import { ChevronLeft, Edit, Image as ImageIcon, Loader2, Pencil } from "lucide-react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-
+import { api } from "~/trpc/react";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { Button } from "~/components/ui/button";
 
 export default function WebinarDetailPage() {
+    const params = useParams();
+    const id = params.id as string;
+
+    const { data: webinar, isLoading } = api.products.getById.useQuery({ id });
+
     const Label = ({ children }: { children: React.ReactNode }) => (
         <div className="w-[200px] text-slate-700 font-semibold">{children}</div>
     );
@@ -29,26 +38,73 @@ export default function WebinarDetailPage() {
         </div>
     );
 
-    const SectionHeader = ({ title, icon: Icon }: { title: string; icon?: any }) => (
+    const SectionHeader = ({ title, showEdit }: { title: string; showEdit?: boolean }) => (
         <div className="flex items-center justify-between border-b-2 border-blue-500 pb-2 mb-6">
             <h2 className="text-lg font-bold text-slate-800">{title}</h2>
-            {Icon && <Icon className="w-4 h-4 text-blue-500 cursor-pointer" />}
+            {showEdit && (
+                <Link
+                    href={`/dashboard/webinar/${id}/edit`}
+                    className="flex items-center gap-1.5 text-xs text-blue-500 hover:text-blue-700 font-medium transition-colors"
+                >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Edit
+                </Link>
+            )}
         </div>
     );
+
+    const getStatusColor = (status: string) => {
+        switch (status?.toLowerCase()) {
+            case "published": return "text-amber-500";
+            case "selesai": return "text-green-600";
+            case "draft": return "text-slate-500";
+            case "archived": return "text-slate-400";
+            default: return "text-slate-500";
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
+            </div>
+        );
+    }
+
+    if (!webinar) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                <p className="text-slate-500 text-lg">Webinar tidak ditemukan.</p>
+                <Link href="/dashboard/webinar" className="text-blue-500 hover:underline">
+                    ← Kembali ke Daftar Webinar
+                </Link>
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-4xl space-y-6">
             {/* Header Back */}
-            <Link
-                href="/dashboard/webinar"
-                className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 w-fit"
-            >
-                <ChevronLeft className="h-4 w-4" />
-                <span>Kembali ke Daftar Webinar</span>
-            </Link>
+            <div className="flex items-center justify-between">
+                <Link
+                    href="/dashboard/webinar"
+                    className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 w-fit"
+                >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span>Kembali ke Daftar Webinar</span>
+                </Link>
+
+                <Button
+                    variant={"outline"}
+                    className="flex items-center "
+                >
+                    <Edit className="w-4 h-4" />
+                    Edit Webinar
+                </Button>
+            </div>
 
             {/* Title */}
-            <h1 className="text-2xl font-bold text-blue-600">Webinar UI/UX Dasar</h1>
+            <h1 className="text-2xl font-bold text-blue-600">{webinar.name}</h1>
 
             {/* Tabs */}
             <Tabs defaultValue="detail" className="w-full">
@@ -64,7 +120,7 @@ export default function WebinarDetailPage() {
                             value="user"
                             className="flex-1 rounded-none border-b-2 border-transparent py-4 data-[state=active]:border-blue-600 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 bg-transparent text-slate-500 font-medium"
                         >
-                            User (27)
+                            User (0)
                         </TabsTrigger>
                         <TabsTrigger
                             value="form"
@@ -78,13 +134,13 @@ export default function WebinarDetailPage() {
                 <TabsContent value="detail" className="space-y-8 bg-blue-50/50 p-6 rounded-b-xl min-h-screen">
                     {/* Informasi Produk */}
                     <section>
-                        <SectionHeader title="Informasi Produk" icon={Edit} />
+                        <SectionHeader title="Informasi Produk" showEdit />
 
-                        <Row label="Nama">Webinar UI/UX Dasar</Row>
+                        <Row label="Nama">{webinar.name}</Row>
 
                         <Row label="Deskripsi">
                             <span className="leading-relaxed">
-                                Webinar UI/UX Dasar untuk Pemula adalah sesi pembelajaran online yang dirancang khusus untuk membantu peserta memahami fundamental desain User Interface (UI) dan User Experience (UX).
+                                {webinar.description ?? "-"}
                             </span>
                         </Row>
 
@@ -101,17 +157,33 @@ export default function WebinarDetailPage() {
                             </div>
                         </div>
 
-                        <Row label="Tipe">Gratis</Row>
-                        <Row label="Harga">Rp 0</Row>
-                        <Row label="Platform">Zoom</Row>
-                        <Row label="Link">https://zoom.us/j/84592167321</Row>
-                        <Row label="Catatan">-</Row>
+                        <Row label="Tipe">
+                            {Number(webinar.price) === 0 ? "Gratis" : "Berbayar"}
+                        </Row>
+                        <Row label="Harga">
+                            {Number(webinar.price) === 0
+                                ? "Rp 0"
+                                : `Rp ${Number(webinar.price).toLocaleString("id-ID")}`
+                            }
+                        </Row>
+                        <Row label="Link">
+                            {webinar.link ? (
+                                <a href={webinar.link} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline break-all">
+                                    {webinar.link}
+                                </a>
+                            ) : "-"}
+                        </Row>
+
                         <div className="flex flex-col md:flex-row gap-2 md:items-start mb-4">
                             <div className="md:pt-2.5">
                                 <Label>Status</Label>
                             </div>
                             <Value>
-                                <span className="text-amber-500 font-semibold">Published</span>
+                                <span className={`font-semibold ${getStatusColor(webinar.status ?? "draft")}`}>
+                                    {webinar.status
+                                        ? webinar.status.charAt(0).toUpperCase() + webinar.status.slice(1)
+                                        : "Draft"}
+                                </span>
                             </Value>
                         </div>
                     </section>
@@ -119,28 +191,31 @@ export default function WebinarDetailPage() {
                     {/* Jadwal */}
                     <section>
                         <SectionHeader title="Jadwal" />
-                        <Row label="Waktu Mulai">27 Maret 2026 09:00</Row>
-                        <Row label="Waktu Selesai">27 Maret 2026 11:00</Row>
+                        <Row label="Waktu Mulai">
+                            {webinar.startDate
+                                ? format(new Date(webinar.startDate), "d MMMM yyyy HH:mm", { locale: idLocale })
+                                : "-"}
+                        </Row>
+                        <Row label="Waktu Selesai">
+                            {webinar.endDate
+                                ? format(new Date(webinar.endDate), "d MMMM yyyy HH:mm", { locale: idLocale })
+                                : "-"}
+                        </Row>
                     </section>
 
-                    {/* Pendaftaran */}
-                    <section>
-                        <SectionHeader title="Pendaftaran" />
-                        <Row label="Kuota">40 Orang</Row>
-                        <Row label="Batas Daftar">25 Maret 2026 23:59</Row>
-                    </section>
-
+                    {/* Timestamp */}
                     <div className="flex justify-end pt-4">
-                        <p className="text-slate-400 text-sm italic">Ditambahkan pada 20 Maret 2026 09:45</p>
+                        <p className="text-slate-400 text-sm italic">
+                            Ditambahkan pada {format(new Date(webinar.createdAt), "d MMMM yyyy HH:mm", { locale: idLocale })}
+                        </p>
                     </div>
-
                 </TabsContent>
 
                 <TabsContent value="user">
-                    <div className="p-6 text-center text-slate-500">List User Placeholder</div>
+                    <div className="p-6 text-center text-slate-500">Belum ada peserta terdaftar.</div>
                 </TabsContent>
                 <TabsContent value="form">
-                    <div className="p-6 text-center text-slate-500">Form Customization Placeholder</div>
+                    <div className="p-6 text-center text-slate-500">Form Customization belum tersedia.</div>
                 </TabsContent>
             </Tabs>
         </div>

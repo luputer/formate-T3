@@ -1,13 +1,18 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
+
+const ProductType = z.enum(["WEBINAR", "DIGITAL_PRODUCT", "KELAS_ONLINE"]);
 
 export const productsRouter = createTRPCRouter({
     // Get all products
-    getAll: publicProcedure.query(async ({ ctx }) => {
-        return await ctx.db.product.findMany({
-            orderBy: { createdAt: "desc" },
-        });
-    }),
+    getAll: publicProcedure
+        .input(z.object({ type: ProductType.optional() }).optional())
+        .query(async ({ ctx, input }) => {
+            return await ctx.db.product.findMany({
+                where: input?.type ? { type: input.type } : undefined,
+                orderBy: { createdAt: "desc" },
+            });
+        }),
 
     // Get product by ID
     getById: publicProcedure
@@ -19,38 +24,46 @@ export const productsRouter = createTRPCRouter({
         }),
 
     // Create a new product
-    create: publicProcedure
+    create: protectedProcedure
         .input(
             z.object({
                 name: z.string().min(1, "Product name is required"),
                 price: z.number().positive("Price must be positive"),
+                description: z.string().optional(),
+                type: ProductType.optional(),
+                startDate: z.date().optional(),
+                endDate: z.date().optional(),
+                link: z.string().optional(),
             })
         )
         .mutation(async ({ ctx, input }) => {
             return await ctx.db.product.create({
                 data: {
-                    name: input.name,
-                    price: input.price,
+                    ...input,
+                    userId: ctx.session.user.id,
                 },
             });
         }),
 
     // Update a product
-    update: publicProcedure
+    update: protectedProcedure
         .input(
             z.object({
                 id: z.string(),
                 name: z.string().min(1, "Product name is required").optional(),
                 price: z.number().positive("Price must be positive").optional(),
+                description: z.string().optional(),
+                type: ProductType.optional(),
+                startDate: z.date().optional(),
+                endDate: z.date().optional(),
+                link: z.string().optional(),
             })
         )
         .mutation(async ({ ctx, input }) => {
+            const { id, ...data } = input;
             return await ctx.db.product.update({
-                where: { id: input.id },
-                data: {
-                    name: input.name,
-                    price: input.price,
-                },
+                where: { id: id },
+                data,
             });
         }),
 

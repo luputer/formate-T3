@@ -33,10 +33,28 @@ model Todo {
   updatedAt DateTime @updatedAt
 }
 
+enum ProductType {
+  WEBINAR
+  DIGITAL_PRODUCT
+  KELAS_ONLINE
+}
+
 model Product {
-  id        String   @id @default(uuid())
-  name      String
-  price     Decimal
+  id          String      @id @default(uuid())
+  name        String
+  description String?     @db.Text
+  price       Decimal
+  type        ProductType @default(WEBINAR)
+
+  // Webinar specific fields
+  startDate DateTime?
+  endDate   DateTime?
+  link      String?
+  status    String    @default("published") // 'published', 'draft', 'archived'
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -86,6 +104,7 @@ model User {
 
   accounts Account[]
   sessions Session[]
+  products Product[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

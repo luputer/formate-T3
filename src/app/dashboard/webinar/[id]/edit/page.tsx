@@ -1,18 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { format } from "date-fns";
-import { Calendar as CalendarIcon, ChevronLeft, Plus, Loader2 } from "lucide-react";
-import { cn } from "~/lib/utils";
+import { useParams, useRouter } from "next/navigation";
+import { ChevronLeft, Loader2, Save } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { Calendar } from "~/components/ui/calendar";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "~/components/ui/popover";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
@@ -40,59 +32,106 @@ const SectionHeader = ({ title }: { title: string }) => (
     </div>
 );
 
-export default function CreateWebinarPage() {
+export default function EditWebinarPage() {
     const router = useRouter();
+    const params = useParams();
+    const id = params.id as string;
+
+    const { data: webinar, isLoading } = api.products.getById.useQuery({ id });
 
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [priceType, setPriceType] = useState("free");
     const [price, setPrice] = useState("");
     const [link, setLink] = useState("");
+    const [status, setStatus] = useState("published");
     const [dateStart, setDateStart] = useState<Date>();
     const [dateEnd, setDateEnd] = useState<Date>();
-    const [dateDeadline, setDateDeadline] = useState<Date>(); // Not in schema yet, keep in state for UI
-    const [quota, setQuota] = useState(""); // Not in schema yet
 
-    const createWebinar = api.products.create.useMutation({
+    // Pre-fill form when data loads
+    useEffect(() => {
+        if (webinar) {
+            setName(webinar.name);
+            setDescription(webinar.description ?? "");
+            setLink(webinar.link ?? "");
+            setStatus(webinar.status ?? "published");
+            if (webinar.startDate) setDateStart(new Date(webinar.startDate));
+            if (webinar.endDate) setDateEnd(new Date(webinar.endDate));
+
+            const priceVal = Number(webinar.price);
+            if (priceVal === 0) {
+                setPriceType("free");
+                setPrice("");
+            } else {
+                setPriceType("paid");
+                setPrice(String(priceVal));
+            }
+        }
+    }, [webinar]);
+
+    const updateWebinar = api.products.update.useMutation({
         onSuccess: () => {
-            toast.success("Webinar berhasil dibuat");
-            router.push("/dashboard/webinar");
-            router.refresh();
+            toast.success("Webinar berhasil diperbarui");
+            router.push(`/dashboard/webinar/${id}`);
         },
         onError: (error) => {
-            toast.error(`Gagal membuat webinar: ${error.message}`);
-        }
+            toast.error(`Gagal memperbarui webinar: ${error.message}`);
+        },
     });
 
     const handleSubmit = () => {
+        if (!name.trim()) {
+            toast.error("Nama webinar wajib diisi");
+            return;
+        }
 
         const finalPrice = priceType === "free" ? 0 : parseFloat(price) || 0;
 
-        createWebinar.mutate({
+        updateWebinar.mutate({
+            id,
             name,
             description,
             price: finalPrice,
-            type: "WEBINAR",
             startDate: dateStart,
             endDate: dateEnd,
             link: link || undefined,
         });
     };
 
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
+            </div>
+        );
+    }
+
+    if (!webinar) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                <p className="text-slate-500 text-lg">Webinar tidak ditemukan.</p>
+                <Link href="/dashboard/webinar" className="text-blue-500 hover:underline">
+                    ← Kembali ke Daftar Webinar
+                </Link>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col gap-2 mb-8">
                 <Link
-                    href="/dashboard/webinar"
+                    href={`/dashboard/webinar/${id}`}
                     className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 w-fit"
                 >
                     <ChevronLeft className="h-4 w-4" />
-                    <span>Kembali ke Daftar Webinar</span>
+                    <span>Kembali ke Detail Webinar</span>
                 </Link>
                 <h1 className="text-2xl font-bold text-blue-600">
-                    Tambah Webinar Baru
+                    Edit Webinar
                 </h1>
+                <p className="text-slate-500 text-sm">{webinar.name}</p>
             </div>
 
             <div className="bg-blue-50 p-6 rounded-xl space-y-8">
@@ -118,17 +157,9 @@ export default function CreateWebinarPage() {
                             />
                         </FormGroup>
 
-                        <FormGroup label="Gambar">
-                            <div className="flex h-32 w-32 cursor-pointer flex-col items-center justify-center border border-blue-300 bg-white hover:bg-blue-50 text-blue-500 transition-colors">
-                                <Plus className="h-8 w-8" />
-                                <span className="text-xs mt-1">Upload</span>
-                                <input type="file" className="hidden" accept="image/*" />
-                            </div>
-                        </FormGroup>
-
                         <FormGroup label="Tipe">
                             <Select value={priceType} onValueChange={setPriceType}>
-                                <SelectTrigger className="bg-white w-full border-blue-200 focus:ring-blue-500">
+                                <SelectTrigger className="bg-white w-full h-[52px] border-blue-200 focus:ring-blue-500">
                                     <SelectValue placeholder="Pilih Salah Satu" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -141,11 +172,11 @@ export default function CreateWebinarPage() {
                         {priceType === "paid" && (
                             <FormGroup label="Harga">
                                 <div className="relative">
-                                    <span className="absolute left-3 top-2.5 text-slate-500">Rp</span>
+                                    <span className="absolute left-3 top-3.5 text-slate-500">Rp</span>
                                     <Input
                                         type="number"
                                         placeholder="0"
-                                        className="pl-10 bg-white border-blue-200 focus-visible:ring-blue-500"
+                                        className="pl-10 bg-white h-[52px] border-blue-200 focus-visible:ring-blue-500"
                                         value={price}
                                         onChange={(e) => setPrice(e.target.value)}
                                     />
@@ -153,34 +184,17 @@ export default function CreateWebinarPage() {
                             </FormGroup>
                         )}
 
-                        <FormGroup label="Platform">
-                            <Select defaultValue="zoom">
-                                <SelectTrigger className="bg-white w-full h-[52px] border-blue-200 focus:ring-blue-500">
-                                    <SelectValue placeholder="Pilih Platform" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="zoom">Zoom</SelectItem>
-                                    <SelectItem value="google-meet">Google Meet</SelectItem>
-                                    <SelectItem value="other">Lainnya</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </FormGroup>
-
                         <FormGroup label="Link">
                             <Input
                                 placeholder="Masukkan link webinar"
-                                className="bg-white border-blue-200 focus-visible:ring-blue-500"
+                                className="bg-white h-[52px] border-blue-200 focus-visible:ring-blue-500"
                                 value={link}
                                 onChange={(e) => setLink(e.target.value)}
                             />
                         </FormGroup>
 
-                        <FormGroup label="Catatan">
-                            <Textarea placeholder="Masukkan catatan (opsional)" className="min-h-[120px] bg-white border-blue-200 focus-visible:ring-blue-500" />
-                        </FormGroup>
-
                         <FormGroup label="Status">
-                            <Select defaultValue="published">
+                            <Select value={status} onValueChange={setStatus}>
                                 <SelectTrigger className="bg-white w-full h-[52px] border-blue-200 focus:ring-blue-500">
                                     <SelectValue placeholder="Pilih Status" />
                                 </SelectTrigger>
@@ -213,67 +227,24 @@ export default function CreateWebinarPage() {
                                 placeholder="Pilih Tanggal Selesai"
                             />
                         </FormGroup>
-
-                        <FormGroup label="Waktu Deadline">
-                            <DateTimePicker
-                                date={dateDeadline}
-                                setDate={setDateDeadline}
-                                placeholder="Pilih Tanggal Selesai"
-                            />
-                        </FormGroup>
-                    </div>
-                </section>
-
-                {/* Pendaftaran */}
-                <section>
-                    <SectionHeader title="Pendaftaran" />
-                    <div className="space-y-5">
-                        <FormGroup label="Batas Daftar">
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                            "w-full justify-start text-left font-normal bg-white border-blue-200 hover:bg-blue-50",
-                                            !dateDeadline && "text-muted-foreground",
-                                        )}
-                                    >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {dateDeadline ? format(dateDeadline, "PPP") : <span>Pilih tanggal</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                    <Calendar mode="single" selected={dateDeadline} onSelect={setDateDeadline} initialFocus />
-                                </PopoverContent>
-                            </Popover>
-                        </FormGroup>
-
-                        <FormGroup label="Kuota">
-                            <Input
-                                type="number"
-                                placeholder="0"
-                                className="bg-white border-blue-200 focus-visible:ring-blue-500"
-                                value={quota}
-                                onChange={(e) => setQuota(e.target.value)}
-                            />
-                        </FormGroup>
                     </div>
                 </section>
             </div>
 
             <Button
                 onClick={handleSubmit}
-                disabled={createWebinar.isPending}
+                disabled={updateWebinar.isPending}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-6 text-lg shadow-md shadow-blue-200"
             >
-                {createWebinar.isPending ? (
+                {updateWebinar.isPending ? (
                     <>
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                         Menyimpan...
                     </>
                 ) : (
                     <>
-                        Tambah <Plus className="ml-2 h-5 w-5" />
+                        <Save className="mr-2 h-5 w-5" />
+                        Simpan Perubahan
                     </>
                 )}
             </Button>

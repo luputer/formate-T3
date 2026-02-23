@@ -8,81 +8,57 @@ import {
     Eye,
     Trash2,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Loader2,
 } from "lucide-react";
 
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import { api } from "~/trpc/react";
+import { toast } from "sonner";
+import { useState } from "react";
+
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
+
 export default function WebinarPage() {
-    const webinars = [
-        {
-            id: 1,
-            name: "Webinar UI/UX Dasar",
-            date: "27 Maret 2026",
-            time: "09:00 - 11:00",
-            type: "Gratis",
-            price: "Rp 0",
-            buyers: 27,
-            status: "Selesai"
+    const utils = api.useUtils();
+
+    const { data: webinars, isLoading } = api.products.getAll.useQuery({ type: "WEBINAR" });
+
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+
+    const deleteWebinar = api.products.delete.useMutation({
+        onSuccess: () => {
+            toast.success("Webinar berhasil dihapus");
+            void utils.products.getAll.invalidate();
+            setDeleteId(null);
         },
-        {
-            id: 2,
-            name: "Webinar Personal Branding",
-            date: "27 Maret 2026",
-            time: "09:00 - 11:00",
-            type: "Berbayar",
-            price: "Rp 149.000",
-            buyers: 27,
-            status: "Published"
+        onError: (error) => {
+            toast.error(`Gagal menghapus webinar: ${error.message}`);
+            setDeleteId(null);
         },
-        {
-            id: 3,
-            name: "Webinar UI/UX Dasar",
-            date: "27 Maret 2026",
-            time: "09:00 - 11:00",
-            type: "Gratis",
-            price: "Rp 0",
-            buyers: 27,
-            status: "Published"
-        },
-        {
-            id: 4,
-            name: "Webinar Personal Branding",
-            date: "27 Maret 2026",
-            time: "09:00 - 11:00",
-            type: "Berbayar",
-            price: "Rp 149.000",
-            buyers: 27,
-            status: "Unpublished"
-        },
-        {
-            id: 5,
-            name: "Webinar UI/UX Dasar",
-            date: "27 Maret 2026",
-            time: "09:00 - 11:00",
-            type: "Gratis",
-            price: "Rp 0",
-            buyers: 27,
-            status: "Selesai"
-        },
-        {
-            id: 6,
-            name: "Webinar Personal Branding",
-            date: "27 Maret 2026",
-            time: "09:00 - 11:00",
-            type: "Berbayar",
-            price: "Rp 149.000",
-            buyers: 27,
-            status: "Unpublished"
-        },
-    ];
+    });
 
     const getStatusColor = (status: string) => {
-        switch (status) {
-            case "Selesai": return "bg-green-100 text-green-600 border border-green-200";
-            case "Published": return "bg-amber-100 text-amber-600 border border-amber-200";
-            case "Unpublished": return "bg-slate-200 text-slate-600 border border-slate-300";
+        switch (status.toLowerCase()) {
+            case "selesai": return "bg-green-100 text-green-600 border border-green-200";
+            case "published": return "bg-amber-100 text-amber-600 border border-amber-200";
+            case "draft": return "bg-slate-200 text-slate-600 border border-slate-300";
+            case "archived": return "bg-slate-200 text-slate-600 border border-slate-300";
             default: return "bg-slate-100 text-slate-600";
         }
     };
+
+    const webinarToDelete = webinars?.find((w) => w.id === deleteId);
 
     return (
         <div className="space-y-6">
@@ -144,42 +120,83 @@ export default function WebinarPage() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {webinars.map((item) => (
-                            <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                                <td className="px-6 py-4 font-medium text-slate-800">
-                                    <Link href={`/dashboard/webinar/${item.id}`} className="hover:text-blue-600 hover:underline">
-                                        {item.name}
-                                    </Link>
+                        {isLoading ? (
+                            <tr>
+                                <td colSpan={7} className="text-center py-12 text-slate-500">
+                                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-400" />
+                                    Memuat data...
                                 </td>
-                                <td className="px-6 py-4">
-                                    <div className="font-medium text-slate-700">{item.date}</div>
-                                    <div className="text-xs text-slate-400">{item.time}</div>
-                                </td>
-                                <td className="px-6 py-4 text-slate-600">{item.type}</td>
-                                <td className="px-6 py-4 font-medium text-slate-800">{item.price}</td>
-                                <td className="px-6 py-4">
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-medium text-slate-800">{item.buyers}</span>
-                                        <button className="text-[10px] px-2 py-0.5 rounded-full border border-blue-200 text-blue-600 hover:bg-blue-50">Lihat</button>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(item.status)}`}>
-                                        {item.status}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <div className="flex justify-center gap-3">
-                                        <button className="text-blue-500 hover:text-blue-700 transition-colors">
-                                            <Eye className="w-5 h-5" />
-                                        </button>
-                                        <button className="text-rose-400 hover:text-rose-600 transition-colors">
-                                            <Trash2 className="w-5 h-5" />
-                                        </button>
+                            </tr>
+                        ) : webinars?.length === 0 ? (
+                            <tr>
+                                <td colSpan={7} className="text-center py-12 text-slate-400">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <span className="text-4xl">📭</span>
+                                        <span>Belum ada webinar.</span>
+                                        <Link href="/dashboard/webinar/create" className="text-blue-500 hover:underline text-sm">
+                                            Tambah webinar pertamamu →
+                                        </Link>
                                     </div>
                                 </td>
                             </tr>
-                        ))}
+                        ) : (
+                            webinars?.map((item) => (
+                                <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                                    <td className="px-6 py-4 font-medium text-slate-800">
+                                        <Link href={`/dashboard/webinar/${item.id}`} className="hover:text-blue-600 hover:underline">
+                                            {item.name}
+                                        </Link>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="font-medium text-slate-700">
+                                            {item.startDate ? format(new Date(item.startDate), "d MMMM yyyy", { locale: idLocale }) : "-"}
+                                        </div>
+                                        <div className="text-xs text-slate-400">
+                                            {item.startDate ? format(new Date(item.startDate), "HH:mm") : ""}
+                                            {item.startDate && item.endDate ? " - " : ""}
+                                            {item.endDate ? format(new Date(item.endDate), "HH:mm") : ""}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-600">
+                                        {Number(item.price) === 0 ? "Gratis" : "Berbayar"}
+                                    </td>
+                                    <td className="px-6 py-4 font-medium text-slate-800">
+                                        {Number(item.price) === 0 ? "Rp 0" : `Rp ${Number(item.price).toLocaleString("id-ID")}`}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium text-slate-800">0</span>
+                                            <button className="text-[10px] px-2 py-0.5 rounded-full border border-blue-200 text-blue-600 hover:bg-blue-50">Lihat</button>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className={`px-3 py-1 rounded-full text-xs font-semibold w-fit ${getStatusColor(item.status || "draft")}`}>
+                                            {item.status || "Draft"}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex justify-center gap-3">
+                                            {/* View / Edit */}
+                                            <Link
+                                                href={`/dashboard/webinar/${item.id}`}
+                                                className="text-blue-500 hover:text-blue-700 transition-colors"
+                                                title="Lihat Detail"
+                                            >
+                                                <Eye className="w-5 h-5" />
+                                            </Link>
+                                            {/* Delete */}
+                                            <button
+                                                onClick={() => setDeleteId(item.id)}
+                                                className="text-rose-400 hover:text-rose-600 transition-colors"
+                                                title="Hapus Webinar"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -190,22 +207,47 @@ export default function WebinarPage() {
                     <button className="flex items-center justify-between px-3 py-2 border border-slate-200 rounded-lg bg-white w-16">
                         7 <ChevronDown className="w-3 h-3" />
                     </button>
-                    <span className="text-slate-400">Hasil: 1-7 dari 300</span>
+                    <span className="text-slate-400">Hasil: {webinars?.length ?? 0} webinar</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-400">
                         <ChevronLeft className="w-4 h-4" />
                     </button>
                     <button className="w-8 h-8 flex items-center justify-center bg-blue-600 text-white rounded-lg font-medium shadow-sm shadow-blue-200">1</button>
-                    <button className="w-8 h-8 flex items-center justify-center hover:bg-slate-50 rounded-lg text-slate-500">2</button>
-                    <button className="w-8 h-8 flex items-center justify-center hover:bg-slate-50 rounded-lg text-slate-500">3</button>
-                    <span className="px-1 text-slate-400">...</span>
-                    <button className="w-8 h-8 flex items-center justify-center hover:bg-slate-50 rounded-lg text-slate-500">100</button>
                     <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-600">
                         <ChevronRight className="w-4 h-4" />
                     </button>
                 </div>
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Hapus Webinar?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Kamu yakin ingin menghapus webinar{" "}
+                            <span className="font-semibold text-slate-800">&quot;{webinarToDelete?.name}&quot;</span>?
+                            <br />
+                            Tindakan ini tidak bisa dibatalkan.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-rose-600 hover:bg-rose-700 text-white"
+                            onClick={() => {
+                                if (deleteId) deleteWebinar.mutate({ id: deleteId });
+                            }}
+                            disabled={deleteWebinar.isPending}
+                        >
+                            {deleteWebinar.isPending ? (
+                                <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Menghapus...</>
+                            ) : "Ya, Hapus"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
