@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import type { z } from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Plus, Loader2 } from "lucide-react";
@@ -20,53 +20,11 @@ import {
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
 import { DateTimePicker } from "~/components/ui/date-time-picker";
+import { webinarSchema } from "~/lib/validation";
 
 // ============================================================
 // Schema Zod
 // ============================================================
-const webinarSchema = z
-    .object({
-        name: z.string().min(1, "Nama webinar wajib diisi"),
-        description: z.string().min(1, "Deskripsi wajib diisi"),
-        priceType: z.enum(["free", "paid"]),
-        price: z.number().min(0, "Harga tidak boleh negatif").optional(),
-        platform: z.string().min(1, "Platform wajib dipilih"),
-        link: z
-            .string()
-            .url("Link tidak valid, pastikan format URL benar (https://...)")
-            .optional()
-            .or(z.literal("")),
-        notes: z.string().optional(),
-        status: z.string().min(1, "Status wajib dipilih"),
-        dateStart: z.date({ required_error: "Waktu mulai wajib diisi" }),
-        dateEnd: z.date({ required_error: "Waktu selesai wajib diisi" }),
-        dateDeadline: z.date().optional(),
-        quota: z.number().min(1, "Kuota minimal 1").optional(),
-    })
-    .refine(
-        (data) => {
-            if (data.priceType === "paid") {
-                return data.price !== undefined && data.price > 0;
-            }
-            return true;
-        },
-        {
-            message: "Harga wajib diisi untuk webinar berbayar",
-            path: ["price"],
-        }
-    )
-    .refine(
-        (data) => {
-            if (data.dateStart && data.dateEnd) {
-                return data.dateEnd > data.dateStart;
-            }
-            return true;
-        },
-        {
-            message: "Waktu selesai harus setelah waktu mulai",
-            path: ["dateEnd"],
-        }
-    );
 
 type WebinarFormValues = z.infer<typeof webinarSchema>;
 
@@ -143,7 +101,7 @@ export default function CreateWebinarPage() {
             type: "WEBINAR",
             startDate: data.dateStart,
             endDate: data.dateEnd,
-            link: data.link || undefined,
+            link: data.link ?? undefined,
         });
     };
 
@@ -297,7 +255,7 @@ export default function CreateWebinarPage() {
                             <DateTimePicker
                                 date={dateStart}
                                 setDate={(date) =>
-                                    setValue("dateStart", date!, { shouldValidate: true })
+                                    setValue("dateStart", date, { shouldValidate: true })
                                 }
                                 placeholder="Pilih Tanggal Mulai"
                             />
@@ -308,7 +266,7 @@ export default function CreateWebinarPage() {
                             <DateTimePicker
                                 date={dateEnd}
                                 setDate={(date) =>
-                                    setValue("dateEnd", date!, { shouldValidate: true })
+                                    setValue("dateEnd", date, { shouldValidate: true })
                                 }
                                 placeholder="Pilih Tanggal Selesai"
                             />
@@ -319,7 +277,7 @@ export default function CreateWebinarPage() {
                             <DateTimePicker
                                 date={dateDeadline}
                                 setDate={(date) =>
-                                    setValue("dateDeadline", date!, { shouldValidate: true })
+                                    setValue("dateDeadline", date, { shouldValidate: true })
                                 }
                                 placeholder="Pilih Tanggal Deadline"
                             />
