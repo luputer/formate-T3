@@ -27,7 +27,7 @@ export default function RootLayout({
         <NextAuthProvider>
           <TRPCReactProvider>
             {children}
-            <Toaster />
+            <Toaster position="top-right" />
           </TRPCReactProvider>
         </NextAuthProvider>
       </body>

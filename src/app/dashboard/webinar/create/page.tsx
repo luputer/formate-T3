@@ -1,18 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
-import { Calendar as CalendarIcon, ChevronLeft, Plus, Loader2 } from "lucide-react";
-import { cn } from "~/lib/utils";
+import { ChevronLeft, Plus, Loader2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { Calendar } from "~/components/ui/calendar";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "~/components/ui/popover";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
@@ -27,10 +21,73 @@ import { api } from "~/trpc/react";
 import { toast } from "sonner";
 import { DateTimePicker } from "~/components/ui/date-time-picker";
 
-const FormGroup = ({ label, children }: { label: string; children: React.ReactNode }) => (
+// ============================================================
+// Schema Zod
+// ============================================================
+const webinarSchema = z
+    .object({
+        name: z.string().min(1, "Nama webinar wajib diisi"),
+        description: z.string().min(1, "Deskripsi wajib diisi"),
+        priceType: z.enum(["free", "paid"]),
+        price: z.number().min(0, "Harga tidak boleh negatif").optional(),
+        platform: z.string().min(1, "Platform wajib dipilih"),
+        link: z
+            .string()
+            .url("Link tidak valid, pastikan format URL benar (https://...)")
+            .optional()
+            .or(z.literal("")),
+        notes: z.string().optional(),
+        status: z.string().min(1, "Status wajib dipilih"),
+        dateStart: z.date({ required_error: "Waktu mulai wajib diisi" }),
+        dateEnd: z.date({ required_error: "Waktu selesai wajib diisi" }),
+        dateDeadline: z.date().optional(),
+        quota: z.number().min(1, "Kuota minimal 1").optional(),
+    })
+    .refine(
+        (data) => {
+            if (data.priceType === "paid") {
+                return data.price !== undefined && data.price > 0;
+            }
+            return true;
+        },
+        {
+            message: "Harga wajib diisi untuk webinar berbayar",
+            path: ["price"],
+        }
+    )
+    .refine(
+        (data) => {
+            if (data.dateStart && data.dateEnd) {
+                return data.dateEnd > data.dateStart;
+            }
+            return true;
+        },
+        {
+            message: "Waktu selesai harus setelah waktu mulai",
+            path: ["dateEnd"],
+        }
+    );
+
+type WebinarFormValues = z.infer<typeof webinarSchema>;
+
+// ============================================================
+// Sub-components
+// ============================================================
+const FormGroup = ({
+    label,
+    children,
+    error,
+}: {
+    label: string;
+    children: React.ReactNode;
+    error?: string;
+}) => (
     <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-4 items-start">
         <Label className="mt-2 text-slate-700 font-medium text-base">{label}</Label>
-        <div className="w-full">{children}</div>
+        <div className="w-full">
+            {children}
+            {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+        </div>
     </div>
 );
 
@@ -40,18 +97,32 @@ const SectionHeader = ({ title }: { title: string }) => (
     </div>
 );
 
+// ============================================================
+// Main Page
+// ============================================================
 export default function CreateWebinarPage() {
     const router = useRouter();
 
-    const [name, setName] = useState("");
-    const [description, setDescription] = useState("");
-    const [priceType, setPriceType] = useState("free");
-    const [price, setPrice] = useState("");
-    const [link, setLink] = useState("");
-    const [dateStart, setDateStart] = useState<Date>();
-    const [dateEnd, setDateEnd] = useState<Date>();
-    const [dateDeadline, setDateDeadline] = useState<Date>(); // Not in schema yet, keep in state for UI
-    const [quota, setQuota] = useState(""); // Not in schema yet
+    const {
+        register,
+        handleSubmit,
+        watch,
+        setValue,
+        formState: { errors },
+    } = useForm<WebinarFormValues>({
+        resolver: zodResolver(webinarSchema),
+        defaultValues: {
+            priceType: "free",
+            platform: "zoom",
+            status: "published",
+            price: 0,
+        },
+    });
+
+    const priceType = watch("priceType");
+    const dateStart = watch("dateStart");
+    const dateEnd = watch("dateEnd");
+    const dateDeadline = watch("dateDeadline");
 
     const createWebinar = api.products.create.useMutation({
         onSuccess: () => {
@@ -61,21 +132,18 @@ export default function CreateWebinarPage() {
         },
         onError: (error) => {
             toast.error(`Gagal membuat webinar: ${error.message}`);
-        }
+        },
     });
 
-    const handleSubmit = () => {
-
-        const finalPrice = priceType === "free" ? 0 : parseFloat(price) || 0;
-
+    const onSubmit = (data: WebinarFormValues) => {
         createWebinar.mutate({
-            name,
-            description,
-            price: finalPrice,
+            name: data.name,
+            description: data.description,
+            price: data.priceType === "free" ? 0 : (data.price ?? 0),
             type: "WEBINAR",
-            startDate: dateStart,
-            endDate: dateEnd,
-            link: link || undefined,
+            startDate: data.dateStart,
+            endDate: data.dateEnd,
+            link: data.link || undefined,
         });
     };
 
@@ -90,34 +158,33 @@ export default function CreateWebinarPage() {
                     <ChevronLeft className="h-4 w-4" />
                     <span>Kembali ke Daftar Webinar</span>
                 </Link>
-                <h1 className="text-2xl font-bold text-blue-600">
-                    Tambah Webinar Baru
-                </h1>
+                <h1 className="text-2xl font-bold text-blue-600">Tambah Webinar Baru</h1>
             </div>
 
             <div className="bg-blue-50 p-6 rounded-xl space-y-8">
-                {/* Informasi Produk */}
+                {/* ─── Informasi Produk ─── */}
                 <section>
                     <SectionHeader title="Informasi Produk" />
                     <div className="space-y-5">
-                        <FormGroup label="Nama">
+                        {/* Nama */}
+                        <FormGroup label="Nama" error={errors.name?.message}>
                             <Input
                                 placeholder="Masukkan nama webinar"
                                 className="bg-white h-[52px] border-blue-200 focus-visible:ring-blue-500"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                {...register("name")}
                             />
                         </FormGroup>
 
-                        <FormGroup label="Deskripsi">
+                        {/* Deskripsi */}
+                        <FormGroup label="Deskripsi" error={errors.description?.message}>
                             <Textarea
                                 placeholder="Masukkan deskripsi webinar"
                                 className="min-h-[120px] bg-white border-blue-200 focus-visible:ring-blue-500"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
+                                {...register("description")}
                             />
                         </FormGroup>
 
+                        {/* Gambar */}
                         <FormGroup label="Gambar">
                             <div className="flex h-32 w-32 cursor-pointer flex-col items-center justify-center border border-blue-300 bg-white hover:bg-blue-50 text-blue-500 transition-colors">
                                 <Plus className="h-8 w-8" />
@@ -126,8 +193,16 @@ export default function CreateWebinarPage() {
                             </div>
                         </FormGroup>
 
-                        <FormGroup label="Tipe">
-                            <Select value={priceType} onValueChange={setPriceType}>
+                        {/* Tipe (free / paid) */}
+                        <FormGroup label="Tipe" error={errors.priceType?.message}>
+                            <Select
+                                value={priceType}
+                                onValueChange={(val) =>
+                                    setValue("priceType", val as "free" | "paid", {
+                                        shouldValidate: true,
+                                    })
+                                }
+                            >
                                 <SelectTrigger className="bg-white w-full border-blue-200 focus:ring-blue-500">
                                     <SelectValue placeholder="Pilih Salah Satu" />
                                 </SelectTrigger>
@@ -138,23 +213,29 @@ export default function CreateWebinarPage() {
                             </Select>
                         </FormGroup>
 
+                        {/* Harga — hanya muncul kalau paid */}
                         {priceType === "paid" && (
-                            <FormGroup label="Harga">
+                            <FormGroup label="Harga" error={errors.price?.message}>
                                 <div className="relative">
                                     <span className="absolute left-3 top-2.5 text-slate-500">Rp</span>
                                     <Input
                                         type="number"
                                         placeholder="0"
                                         className="pl-10 bg-white border-blue-200 focus-visible:ring-blue-500"
-                                        value={price}
-                                        onChange={(e) => setPrice(e.target.value)}
+                                        {...register("price", { valueAsNumber: true })}
                                     />
                                 </div>
                             </FormGroup>
                         )}
 
-                        <FormGroup label="Platform">
-                            <Select defaultValue="zoom">
+                        {/* Platform */}
+                        <FormGroup label="Platform" error={errors.platform?.message}>
+                            <Select
+                                defaultValue="zoom"
+                                onValueChange={(val) =>
+                                    setValue("platform", val, { shouldValidate: true })
+                                }
+                            >
                                 <SelectTrigger className="bg-white w-full h-[52px] border-blue-200 focus:ring-blue-500">
                                     <SelectValue placeholder="Pilih Platform" />
                                 </SelectTrigger>
@@ -166,26 +247,39 @@ export default function CreateWebinarPage() {
                             </Select>
                         </FormGroup>
 
-                        <FormGroup label="Link">
+                        {/* Link */}
+                        <FormGroup label="Link" error={errors.link?.message}>
                             <Input
-                                placeholder="Masukkan link webinar"
+                                placeholder="https://zoom.us/j/..."
                                 className="bg-white border-blue-200 focus-visible:ring-blue-500"
-                                value={link}
-                                onChange={(e) => setLink(e.target.value)}
+                                {...register("link")}
                             />
                         </FormGroup>
 
-                        <FormGroup label="Catatan">
-                            <Textarea placeholder="Masukkan catatan (opsional)" className="min-h-[120px] bg-white border-blue-200 focus-visible:ring-blue-500" />
+                        {/* Catatan */}
+                        <FormGroup label="Catatan" error={errors.notes?.message}>
+                            <Textarea
+                                placeholder="Masukkan catatan (opsional)"
+                                className="min-h-[120px] bg-white border-blue-200 focus-visible:ring-blue-500"
+                                {...register("notes")}
+                            />
                         </FormGroup>
 
-                        <FormGroup label="Status">
-                            <Select defaultValue="published">
+                        {/* Status */}
+                        <FormGroup label="Status" error={errors.status?.message}>
+                            <Select
+                                defaultValue="published"
+                                onValueChange={(val) =>
+                                    setValue("status", val, { shouldValidate: true })
+                                }
+                            >
                                 <SelectTrigger className="bg-white w-full h-[52px] border-blue-200 focus:ring-blue-500">
                                     <SelectValue placeholder="Pilih Status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="published" className="text-amber-600 font-medium">Published</SelectItem>
+                                    <SelectItem value="published" className="text-amber-600 font-medium">
+                                        Published
+                                    </SelectItem>
                                     <SelectItem value="draft">Draft</SelectItem>
                                     <SelectItem value="archived">Archived</SelectItem>
                                 </SelectContent>
@@ -194,67 +288,56 @@ export default function CreateWebinarPage() {
                     </div>
                 </section>
 
-                {/* Jadwal */}
+                {/* ─── Jadwal ─── */}
                 <section>
                     <SectionHeader title="Jadwal" />
                     <div className="space-y-5">
-                        <FormGroup label="Waktu Mulai">
+                        {/* Waktu Mulai */}
+                        <FormGroup label="Waktu Mulai" error={errors.dateStart?.message}>
                             <DateTimePicker
                                 date={dateStart}
-                                setDate={setDateStart}
+                                setDate={(date) =>
+                                    setValue("dateStart", date!, { shouldValidate: true })
+                                }
                                 placeholder="Pilih Tanggal Mulai"
                             />
                         </FormGroup>
 
-                        <FormGroup label="Waktu Selesai">
+                        {/* Waktu Selesai */}
+                        <FormGroup label="Waktu Selesai" error={errors.dateEnd?.message}>
                             <DateTimePicker
                                 date={dateEnd}
-                                setDate={setDateEnd}
+                                setDate={(date) =>
+                                    setValue("dateEnd", date!, { shouldValidate: true })
+                                }
                                 placeholder="Pilih Tanggal Selesai"
                             />
                         </FormGroup>
 
-                        <FormGroup label="Waktu Deadline">
+                        {/* Waktu Deadline */}
+                        <FormGroup label="Waktu Deadline" error={errors.dateDeadline?.message}>
                             <DateTimePicker
                                 date={dateDeadline}
-                                setDate={setDateDeadline}
-                                placeholder="Pilih Tanggal Selesai"
+                                setDate={(date) =>
+                                    setValue("dateDeadline", date!, { shouldValidate: true })
+                                }
+                                placeholder="Pilih Tanggal Deadline"
                             />
                         </FormGroup>
                     </div>
                 </section>
 
-                {/* Pendaftaran */}
+                {/* ─── Pendaftaran ─── */}
                 <section>
                     <SectionHeader title="Pendaftaran" />
                     <div className="space-y-5">
-                        <FormGroup label="Batas Daftar">
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                            "w-full justify-start text-left font-normal bg-white border-blue-200 hover:bg-blue-50",
-                                            !dateDeadline && "text-muted-foreground",
-                                        )}
-                                    >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {dateDeadline ? format(dateDeadline, "PPP") : <span>Pilih tanggal</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                    <Calendar mode="single" selected={dateDeadline} onSelect={setDateDeadline} initialFocus />
-                                </PopoverContent>
-                            </Popover>
-                        </FormGroup>
-
-                        <FormGroup label="Kuota">
+                        {/* Kuota */}
+                        <FormGroup label="Kuota" error={errors.quota?.message}>
                             <Input
                                 type="number"
                                 placeholder="0"
                                 className="bg-white border-blue-200 focus-visible:ring-blue-500"
-                                value={quota}
-                                onChange={(e) => setQuota(e.target.value)}
+                                {...register("quota", { valueAsNumber: true })}
                             />
                         </FormGroup>
                     </div>
@@ -262,7 +345,7 @@ export default function CreateWebinarPage() {
             </div>
 
             <Button
-                onClick={handleSubmit}
+                onClick={handleSubmit(onSubmit)}
                 disabled={createWebinar.isPending}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-6 text-lg shadow-md shadow-blue-200"
             >
