@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserNav } from "~/components/user-nav";
+import { api } from "~/trpc/react";
 import {
     LayoutDashboard,
     Video,
@@ -12,7 +13,40 @@ import {
     CreditCard,
     Store,
     Menu,
+    ExternalLink,
 } from "lucide-react";
+
+// Komponen kecil: fetch slug catalog user lalu buat link ke /catalog/[slug]
+function CatalogLink() {
+    const { data: catalog, isLoading } = api.catalog.getMine.useQuery();
+
+    // Sudah ada catalog → buka tab baru ke halaman publik
+    if (!isLoading && catalog?.slug) {
+        return (
+            <a
+                href={`/catalog/${catalog.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 border border-blue-500 text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors"
+            >
+                <Store size={18} />
+                <span>Catalog Saya</span>
+                <ExternalLink size={14} className="opacity-60" />
+            </a>
+        );
+    }
+
+    // Belum ada catalog → arahkan ke halaman setup (di luar dashboard)
+    return (
+        <Link
+            href="/catalog/setup"
+            className="flex items-center justify-center gap-2 w-full px-4 py-2.5 border border-blue-500 text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors"
+        >
+            <Store size={18} />
+            <span>Catalog Saya</span>
+        </Link>
+    );
+}
 
 export default function DashboardLayout({
     children,
@@ -74,13 +108,7 @@ export default function DashboardLayout({
 
                 {/* Bottom Button */}
                 <div className="p-4 border-t border-slate-100">
-                    <Link
-                        href="/dashboard/catalog"
-                        className="flex items-center justify-center gap-2 w-full px-4 py-2.5 border border-blue-500 text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors"
-                    >
-                        <Store size={18} />
-                        <span>Catalog Saya</span>
-                    </Link>
+                    <CatalogLink />
                 </div>
             </aside>
 

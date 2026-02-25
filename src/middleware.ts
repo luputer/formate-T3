@@ -12,12 +12,16 @@ export default withAuth(
     {
         callbacks: {
             authorized: ({ req, token }) => {
-                // Ijinkan akses ke halaman utama ("/") tanpa login
-                // (Kita akan handle redirect login user di fungsi middleware di atas)
-                if (req.nextUrl.pathname === "/") {
+                // Halaman publik — akses bebas
+                if (req.nextUrl.pathname === "/") return true;
+
+                // /catalog/[slug] publik, tapi /catalog/setup wajib login
+                if (req.nextUrl.pathname.startsWith("/catalog/") &&
+                    !req.nextUrl.pathname.startsWith("/catalog/setup")) {
                     return true;
                 }
-                // Untuk route lain (dashboard), wajib login (token harus ada)
+
+                // Semua route lain (dashboard, catalog/setup) wajib login
                 return !!token;
             },
         },
@@ -25,6 +29,6 @@ export default withAuth(
 );
 
 export const config = {
-    // Terapkan middleware pada root ("/") dan semua route dashboard
-    matcher: ["/", "/dashboard/:path*"],
+    // Protect dashboard dan catalog/setup, biarkan /catalog/[slug] publik
+    matcher: ["/", "/dashboard/:path*", "/catalog/setup"],
 };

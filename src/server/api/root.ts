@@ -3,6 +3,7 @@ import { postRouter } from "~/server/api/routers/post";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { todoRouter } from "./routers/todo";
 import { productsRouter } from "./routers/products";
+import { catalogRouter } from "./routers/catalog";
 
 /**
  * This is the primary router for your server.
@@ -14,6 +15,7 @@ export const appRouter = createTRPCRouter({
   todo: todoRouter,
   products: productsRouter,
   auth: authRouter,
+  catalog: catalogRouter,
 });
 
 

@@ -105,6 +105,7 @@ model User {
   accounts Account[]
   sessions Session[]
   products Product[]
+  catalog  Catalog?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -116,4 +117,16 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Catalog {
+  id   String  @id @default(uuid())
+  slug String  @unique // URL publik: /catalog/mason-brooks
+  bio  String? @db.Text
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
