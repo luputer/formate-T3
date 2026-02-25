@@ -85,9 +85,9 @@ export default function CreateWebinarPage() {
     const utils = api.useUtils();
 
     const createWebinar = api.products.create.useMutation({
-        onSuccess: async () => {
-            // Invalidate cache agar list webinar langsung update
-            await utils.products.getAll.invalidate();
+        onSuccess: () => {
+            // Invalidate di background — tidak blocking navigasi
+            void utils.products.getAll.invalidate();
             toast.success("Webinar berhasil dibuat");
             router.push("/dashboard/webinar");
         },

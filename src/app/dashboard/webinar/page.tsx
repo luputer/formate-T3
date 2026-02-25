@@ -38,8 +38,8 @@ export default function WebinarPage() {
 
     const deleteWebinar = api.products.delete.useMutation({
         onSuccess: () => {
-            toast.success("Webinar berhasil dihapus");
             void utils.products.getAll.invalidate();
+            toast.success("Webinar berhasil dihapus");
             setDeleteId(null);
         },
         onError: (error) => {

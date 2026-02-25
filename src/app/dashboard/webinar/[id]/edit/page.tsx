@@ -72,10 +72,10 @@ export default function EditWebinarPage() {
     const utils = api.useUtils();
 
     const updateWebinar = api.products.update.useMutation({
-        onSuccess: async () => {
-            // Invalidate cache agar data langsung update tanpa refresh
-            await utils.products.getById.invalidate({ id });
-            await utils.products.getAll.invalidate();
+        onSuccess: () => {
+            // Invalidate di background — tidak blocking navigasi
+            void utils.products.getById.invalidate({ id });
+            void utils.products.getAll.invalidate();
             toast.success("Webinar berhasil diperbarui");
             router.push(`/dashboard/webinar/${id}`);
         },
