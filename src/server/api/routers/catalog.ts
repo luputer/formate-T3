@@ -38,6 +38,17 @@ export const catalogRouter = createTRPCRouter({
             };
         }),
 
+    // Cek apakah slug tersedia (publik, untuk real-time validation di form)
+    checkSlug: publicProcedure
+        .input(z.object({ slug: z.string() }))
+        .query(async ({ ctx, input }) => {
+            const existing = await ctx.db.catalog.findUnique({
+                where: { slug: input.slug },
+                select: { userId: true },
+            });
+            return { available: !existing };
+        }),
+
     // Ambil catalog milik user yang login (untuk link di sidebar dashboard)
     getMine: protectedProcedure.query(async ({ ctx }) => {
         return await ctx.db.catalog.findUnique({
@@ -59,14 +70,25 @@ export const catalogRouter = createTRPCRouter({
             })
         )
         .mutation(async ({ ctx, input }) => {
-            return await ctx.db.catalog.upsert({
-                where: { userId: ctx.session.user.id },
-                update: { slug: input.slug, bio: input.bio },
-                create: {
-                    slug: input.slug,
-                    bio: input.bio,
-                    userId: ctx.session.user.id,
-                },
-            });
+            try {
+                return await ctx.db.catalog.upsert({
+                    where: { userId: ctx.session.user.id },
+                    update: { slug: input.slug, bio: input.bio },
+                    create: {
+                        slug: input.slug,
+                        bio: input.bio,
+                        userId: ctx.session.user.id,
+                    },
+                });
+            } catch (e: unknown) {
+                // Prisma unique constraint violation (P2002) → slug sudah dipakai
+                if (
+                    typeof e === "object" && e !== null &&
+                    "code" in e && (e as { code: string }).code === "P2002"
+                ) {
+                    throw new Error("Slug sudah dipakai orang lain, pilih nama lain.");
+                }
+                throw e;
+            }
         }),
 });

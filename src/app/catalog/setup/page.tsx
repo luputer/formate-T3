@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Loader2, Save, Store } from "lucide-react";
+import { CheckCircle2, ExternalLink, Loader2, Save, Store, XCircle } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
@@ -16,10 +16,29 @@ export default function CatalogSetupPage() {
     const { data: existing, isLoading } = api.catalog.getMine.useQuery();
     const [slug, setSlug] = useState("");
     const [bio, setBio] = useState("");
+    const [debouncedSlug, setDebouncedSlug] = useState("");
 
+    // Debounce input slug 500ms sebelum cek ke server
     useEffect(() => {
-        if (existing?.slug) setSlug(existing.slug);
+        const timer = setTimeout(() => setDebouncedSlug(slug), 500);
+        return () => clearTimeout(timer);
+    }, [slug]);
+
+    // Pre-fill jika sudah ada catalog
+    useEffect(() => {
+        if (existing?.slug) {
+            setSlug(existing.slug);
+            setDebouncedSlug(existing.slug);
+        }
     }, [existing]);
+
+    // Cek ketersediaan slug (skip jika slug sama dengan milik sendiri)
+    const isOwnSlug = existing?.slug === debouncedSlug;
+    const { data: slugCheck, isFetching: isCheckingSlug } = api.catalog.checkSlug.useQuery(
+        { slug: debouncedSlug },
+        { enabled: debouncedSlug.length >= 3 && !isOwnSlug }
+    );
+    const slugAvailable = isOwnSlug ? true : slugCheck?.available;
 
     const upsert = api.catalog.upsert.useMutation({
         onSuccess: (data) => {
@@ -32,10 +51,8 @@ export default function CatalogSetupPage() {
     });
 
     const handleSubmit = () => {
-        if (!slug.trim()) {
-            toast.error("Slug wajib diisi");
-            return;
-        }
+        if (!slug.trim()) return toast.error("Slug wajib diisi");
+        if (!slugAvailable) return toast.error("Slug sudah dipakai, pilih nama lain");
         upsert.mutate({ slug: slug.trim(), bio: bio.trim() || undefined });
     };
 
@@ -48,6 +65,16 @@ export default function CatalogSetupPage() {
             </div>
         );
     }
+
+    // Slug indicator
+    const showIndicator = debouncedSlug.length >= 3;
+    const slugIndicator = isCheckingSlug ? (
+        <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+    ) : showIndicator && slugAvailable ? (
+        <CheckCircle2 className="w-4 h-4 text-green-500" />
+    ) : showIndicator && slugAvailable === false ? (
+        <XCircle className="w-4 h-4 text-red-500" />
+    ) : null;
 
     return (
         <div className="min-h-screen bg-white flex items-center justify-center px-4 py-10">
@@ -70,7 +97,12 @@ export default function CatalogSetupPage() {
                         <Label className="text-slate-700 font-medium">
                             Slug <span className="text-red-500">*</span>
                         </Label>
-                        <div className="flex items-center rounded-lg border border-blue-200 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
+                        <div className={`flex items-center rounded-lg border bg-white overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 transition-colors ${showIndicator && slugAvailable === false
+                                ? "border-red-300"
+                                : showIndicator && slugAvailable
+                                    ? "border-green-300"
+                                    : "border-blue-200"
+                            }`}>
                             <span className="px-3 text-slate-400 text-sm whitespace-nowrap border-r border-blue-100">
                                 /catalog/
                             </span>
@@ -82,10 +114,26 @@ export default function CatalogSetupPage() {
                                     setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
                                 }
                             />
+                            {/* Indicator */}
+                            <span className="pr-3">{slugIndicator}</span>
                         </div>
-                        <p className="text-xs text-slate-400">
-                            Huruf kecil, angka, dan tanda hubung saja. Min. 3 karakter.
-                        </p>
+
+                        {/* Status pesan */}
+                        {showIndicator && (
+                            <p className={`text-xs ${slugAvailable === false ? "text-red-500" : "text-slate-400"
+                                }`}>
+                                {isCheckingSlug
+                                    ? "Mengecek ketersediaan..."
+                                    : slugAvailable === false
+                                        ? "❌ Slug sudah dipakai orang lain, pilih nama lain."
+                                        : "✅ Slug tersedia!"}
+                            </p>
+                        )}
+                        {!showIndicator && (
+                            <p className="text-xs text-slate-400">
+                                Huruf kecil, angka, dan tanda hubung saja. Min. 3 karakter.
+                            </p>
+                        )}
                     </div>
 
                     {/* Bio */}
@@ -114,8 +162,8 @@ export default function CatalogSetupPage() {
                 {/* Save Button */}
                 <Button
                     onClick={handleSubmit}
-                    disabled={upsert.isPending || slug.length < 3}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-6 text-base shadow-md shadow-blue-200"
+                    disabled={upsert.isPending || slug.length < 3 || slugAvailable === false || isCheckingSlug}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-6 text-base shadow-md shadow-blue-200 disabled:opacity-50"
                 >
                     {upsert.isPending ? (
                         <>
