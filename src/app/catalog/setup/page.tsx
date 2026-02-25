@@ -98,10 +98,10 @@ export default function CatalogSetupPage() {
                             Slug <span className="text-red-500">*</span>
                         </Label>
                         <div className={`flex items-center rounded-lg border bg-white overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 transition-colors ${showIndicator && slugAvailable === false
-                                ? "border-red-300"
-                                : showIndicator && slugAvailable
-                                    ? "border-green-300"
-                                    : "border-blue-200"
+                            ? "border-red-300"
+                            : showIndicator && slugAvailable
+                                ? "border-green-300"
+                                : "border-blue-200"
                             }`}>
                             <span className="px-3 text-slate-400 text-sm whitespace-nowrap border-r border-blue-100">
                                 /catalog/

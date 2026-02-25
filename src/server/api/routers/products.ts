@@ -4,22 +4,28 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 const ProductType = z.enum(["WEBINAR", "DIGITAL_PRODUCT", "KELAS_ONLINE"]);
 
 export const productsRouter = createTRPCRouter({
-    // Get all products
-    getAll: publicProcedure
+    // Get all products milik user yang login (dashboard)
+    getAll: protectedProcedure
         .input(z.object({ type: ProductType.optional() }).optional())
         .query(async ({ ctx, input }) => {
             return await ctx.db.product.findMany({
-                where: input?.type ? { type: input.type } : undefined,
+                where: {
+                    userId: ctx.session.user.id, // ← hanya milik user ini
+                    ...(input?.type ? { type: input.type } : {}),
+                },
                 orderBy: { createdAt: "desc" },
             });
         }),
 
-    // Get product by ID
-    getById: publicProcedure
+    // Get product by ID — hanya boleh akses milik sendiri
+    getById: protectedProcedure
         .input(z.object({ id: z.string() }))
         .query(async ({ ctx, input }) => {
             return await ctx.db.product.findUnique({
-                where: { id: input.id },
+                where: {
+                    id: input.id,
+                    userId: ctx.session.user.id, // ← pastikan milik user ini
+                },
             });
         }),
 
@@ -28,7 +34,7 @@ export const productsRouter = createTRPCRouter({
         .input(
             z.object({
                 name: z.string().min(1, "Product name is required"),
-                price: z.number().positive("Price must be positive"),
+                price: z.number().min(0, "Price must be >= 0"),
                 description: z.string().optional(),
                 type: ProductType.optional(),
                 startDate: z.date().optional(),
@@ -45,13 +51,13 @@ export const productsRouter = createTRPCRouter({
             });
         }),
 
-    // Update a product
+    // Update a product — hanya milik sendiri
     update: protectedProcedure
         .input(
             z.object({
                 id: z.string(),
                 name: z.string().min(1, "Product name is required").optional(),
-                price: z.number().positive("Price must be positive").optional(),
+                price: z.number().min(0).optional(),
                 description: z.string().optional(),
                 type: ProductType.optional(),
                 startDate: z.date().optional(),
@@ -61,18 +67,22 @@ export const productsRouter = createTRPCRouter({
         )
         .mutation(async ({ ctx, input }) => {
             const { id, ...data } = input;
-            return await ctx.db.product.update({
-                where: { id: id },
-                data,
+            // Pastikan produk milik user yang login
+            const product = await ctx.db.product.findUnique({
+                where: { id, userId: ctx.session.user.id },
             });
+            if (!product) throw new Error("Produk tidak ditemukan atau bukan milikmu");
+            return await ctx.db.product.update({ where: { id }, data });
         }),
 
-    // Delete a product
-    delete: publicProcedure
+    // Delete a product — hanya milik sendiri
+    delete: protectedProcedure
         .input(z.object({ id: z.string() }))
         .mutation(async ({ ctx, input }) => {
-            return await ctx.db.product.delete({
-                where: { id: input.id },
+            const product = await ctx.db.product.findUnique({
+                where: { id: input.id, userId: ctx.session.user.id },
             });
+            if (!product) throw new Error("Produk tidak ditemukan atau bukan milikmu");
+            return await ctx.db.product.delete({ where: { id: input.id } });
         }),
 });
