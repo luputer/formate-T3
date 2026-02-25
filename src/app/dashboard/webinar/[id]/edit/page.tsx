@@ -69,8 +69,13 @@ export default function EditWebinarPage() {
         }
     }, [webinar]);
 
+    const utils = api.useUtils();
+
     const updateWebinar = api.products.update.useMutation({
-        onSuccess: () => {
+        onSuccess: async () => {
+            // Invalidate cache agar data langsung update tanpa refresh
+            await utils.products.getById.invalidate({ id });
+            await utils.products.getAll.invalidate();
             toast.success("Webinar berhasil diperbarui");
             router.push(`/dashboard/webinar/${id}`);
         },
@@ -118,7 +123,7 @@ export default function EditWebinarPage() {
     }
 
     return (
-        <div className="space-y-6 w-full">
+        <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col gap-2 mb-8">
                 <Link

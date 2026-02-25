@@ -82,11 +82,14 @@ export default function CreateWebinarPage() {
     const dateEnd = watch("dateEnd");
     const dateDeadline = watch("dateDeadline");
 
+    const utils = api.useUtils();
+
     const createWebinar = api.products.create.useMutation({
-        onSuccess: () => {
+        onSuccess: async () => {
+            // Invalidate cache agar list webinar langsung update
+            await utils.products.getAll.invalidate();
             toast.success("Webinar berhasil dibuat");
             router.push("/dashboard/webinar");
-            router.refresh();
         },
         onError: (error) => {
             toast.error(`Gagal membuat webinar: ${error.message}`);
