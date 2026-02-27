@@ -71,7 +71,7 @@ export default function FormateLanding() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="text-2xl font-bold text-blue-500">
-              Formate
+              CuanIN
             </Link>
             <div className="hidden md:flex items-center gap-8">
               <a href="#" className="text-slate-700 hover:text-blue-600 transition-colors">Tentang</a>
