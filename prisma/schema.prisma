@@ -130,3 +130,9 @@ model Catalog {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model tes {
+  id           String   @id @default(cuid())
+  nama         String
+  deskripsi    String?
+}

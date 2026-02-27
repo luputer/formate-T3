@@ -4,6 +4,7 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { todoRouter } from "./routers/todo";
 import { productsRouter } from "./routers/products";
 import { catalogRouter } from "./routers/catalog";
+import { tesRouter } from "./routers/tes";
 
 /**
  * This is the primary router for your server.
@@ -16,6 +17,7 @@ export const appRouter = createTRPCRouter({
   products: productsRouter,
   auth: authRouter,
   catalog: catalogRouter,
+  tes: tesRouter,
 });
 
 
